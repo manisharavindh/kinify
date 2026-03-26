@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@theme {
+  --font-lcd: 'Share Tech Mono', monospace;
+  --font-sans: 'Fredoka', sans-serif;
+  --color-retro-bg: #e0e5ec; 
+  --color-retro-shadow-dark: #a3b1c6;
+  --color-retro-shadow-light: #ffffff;
+}
+
+@layer utilities {
+  .bg-surface {
+    background: var(--color-retro-bg);
+  }
+
+  .shadow-chassis {
+    box-shadow: 
+      20px 20px 40px var(--color-retro-shadow-dark), 
+      -20px -20px 40px var(--color-retro-shadow-light),
+      inset 2px 2px 4px rgba(255,255,255,0.8),
+      inset -2px -2px 4px rgba(163,177,198,0.5);
+  }
+
+  .shadow-recessed {
+    box-shadow: 
+      inset 6px 6px 14px var(--color-retro-shadow-dark), 
+      inset -6px -6px 14px var(--color-retro-shadow-light);
+    background: #d8dde6;
+  }
+
+  .shadow-button {
+    box-shadow: 
+      8px 8px 16px var(--color-retro-shadow-dark), 
+      -8px -8px 16px var(--color-retro-shadow-light),
+      inset 2px 2px 4px rgba(255,255,255,0.9);
+    background: var(--color-retro-bg);
+    border: 1px solid rgba(255,255,255,0.6);
+  }
+
+  .shadow-button-pressed {
+    box-shadow: 
+      inset 5px 5px 10px var(--color-retro-shadow-dark), 
+      inset -5px -5px 10px var(--color-retro-shadow-light);
+    background: #d1d8e0;
+    border: 1px solid rgba(163,177,198,0.3);
+  }
+
+  /* Retro Green LCD */
+  .lcd-screen {
+    background: linear-gradient(180deg, #8ba888 0%, #9cb899 100%);
+    box-shadow: 
+      inset 4px 4px 10px rgba(0,0,0,0.3), 
+      inset -2px -2px 8px rgba(255,255,255,0.3),
+      2px 2px 4px rgba(255,255,255,0.8);
+    border: 3px solid #556253;
+  }
+
+  .slider-track {
+    background: #d1d8e0;
+    box-shadow: 
+      inset 4px 4px 8px var(--color-retro-shadow-dark), 
+      inset -4px -4px 8px var(--color-retro-shadow-light);
+  }
+
+  .led-red {
+    background: #ef4444;
+    box-shadow: 
+      inset 1px 1px 2px rgba(255,255,255,0.8),
+      0 0 10px rgba(239, 68, 68, 0.8),
+      0 0 20px rgba(239, 68, 68, 0.4);
+  }
+
+  .led-green {
+    background: #10b981;
+    box-shadow: 
+      inset 1px 1px 2px rgba(255,255,255,0.8),
+      0 0 10px rgba(16, 185, 129, 0.8),
+      0 0 20px rgba(16, 185, 129, 0.4);
+  }
+
+  .led-off {
+    background: #9ca3af;
+    box-shadow: inset 1px 1px 4px rgba(0,0,0,0.2);
+  }
+
+  .text-glow-retro {
+    text-shadow: 0 0 10px rgba(47, 64, 44, 0.5);
+  }
+
+  .bg-noise {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+  }
+}
