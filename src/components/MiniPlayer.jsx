@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { Play, Pause, Heart } from 'lucide-react';
 import SongCover from './SongCover';
+import Visualizer from './Visualizer';
 import { usePlayer, formatTime } from '../contexts/PlayerContext';
 
 const MiniPlayer = memo(function MiniPlayer() {
@@ -17,7 +18,12 @@ const MiniPlayer = memo(function MiniPlayer() {
         <div className="mini-player-progress-fill" style={{ width: `${pct}%` }} />
       </div>
       <div className="mini-player-content">
-        <SongCover song={currentTrack} className="mini-player-cover" size="sm" />
+        <div className="relative">
+          <SongCover song={currentTrack} className="mini-player-cover" size="sm" />
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none mix-blend-screen opacity-60">
+            <Visualizer width={36} height={20} barWidth={2} gap={2} color="#ffffff" />
+          </div>
+        </div>
         <div className="mini-player-info">
           <p className="mini-player-title">{currentTrack.title}</p>
           <p className="mini-player-artist">{currentTrack.artist?.display_name || currentTrack.artist_name || 'Unknown'}</p>

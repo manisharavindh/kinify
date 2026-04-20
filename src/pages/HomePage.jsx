@@ -198,7 +198,7 @@ export default function HomePage() {
           </div>
           <div className="horizontal-scroll">
             {featuredArtists.map((artist) => (
-              <button key={artist.id} onClick={() => navigate(`/artist/${artist.id}`)} className="card-artist">
+              <button key={artist.id} onClick={() => navigate(`/${artist.username}`)} className="card-artist">
                 <div className="card-artist-avatar">
                   {artist.avatar_url ? (
                     <img src={artist.avatar_url} alt={artist.display_name} />

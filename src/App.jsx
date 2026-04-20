@@ -11,11 +11,11 @@ import HomePage from './pages/HomePage';
 import ExplorePage from './pages/ExplorePage';
 import LibraryPage from './pages/LibraryPage';
 import ProfilePage from './pages/ProfilePage';
-import ArtistPage from './pages/ArtistPage';
 import StudioPage from './pages/StudioPage';
 import UploadPage from './pages/UploadPage';
 import AlbumPage from './pages/AlbumPage';
 import PlaylistDetailPage from './pages/PlaylistDetailPage';
+import UserPage from './pages/UserPage';
 
 function AppRoutes() {
   const { user, loading } = useAuth();
@@ -37,11 +37,11 @@ function AppRoutes() {
         <Route path="/explore" element={<ExplorePage />} />
         <Route path="/library" element={<LibraryPage />} />
         <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/artist/:id" element={<ArtistPage />} />
         <Route path="/studio" element={<StudioPage />} />
         <Route path="/upload" element={<UploadPage />} />
         <Route path="/album/:id" element={<AlbumPage />} />
         <Route path="/playlist/:id" element={<PlaylistDetailPage />} />
+        <Route path="/:username" element={<UserPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

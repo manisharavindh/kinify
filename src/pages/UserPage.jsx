@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Users, Music, Heart, Play, UserPlus, UserMinus, Disc3, ArrowLeft } from 'lucide-react';
+import { Users, Music, Play, UserPlus, UserMinus, Disc3, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { usePlayer } from '../contexts/PlayerContext';
 import SongRow from '../components/SongRow';
 import SongCover from '../components/SongCover';
 
-export default function ArtistPage() {
-  const { id } = useParams();
+export default function UserPage() {
+  const { username } = useParams();
   const { user } = useAuth();
   const { playTrack } = usePlayer();
   const navigate = useNavigate();
 
-  const [artist, setArtist] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [songs, setSongs] = useState([]);
   const [albums, setAlbums] = useState([]);
   const [followerCount, setFollowerCount] = useState(0);
@@ -21,25 +21,33 @@ export default function ArtistPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (id) fetchArtist();
-  }, [id, user]);
+    if (username) fetchUser();
+  }, [username, user]);
 
-  async function fetchArtist() {
+  async function fetchUser() {
     setLoading(true);
     try {
-      // Artist profile
+      // Find profile by username
       const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', id)
+        .ilike('username', username)
         .single();
-      setArtist(profileData);
+        
+      if (!profileData) {
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
+
+      setProfile(profileData);
+      const targetId = profileData.id;
 
       // Artist's songs
       const { data: songData } = await supabase
         .from('songs')
         .select('*, album:albums!album_id(id, title, cover_url)')
-        .eq('artist_id', id)
+        .eq('artist_id', targetId)
         .eq('is_public', true)
         .order('play_count', { ascending: false });
       setSongs((songData || []).map(s => ({ ...s, artist: profileData })));
@@ -48,7 +56,7 @@ export default function ArtistPage() {
       const { data: albumData } = await supabase
         .from('albums')
         .select('*, songs(count)')
-        .eq('artist_id', id)
+        .eq('artist_id', targetId)
         .eq('is_public', true)
         .order('created_at', { ascending: false });
       setAlbums(albumData || []);
@@ -57,40 +65,40 @@ export default function ArtistPage() {
       const { count } = await supabase
         .from('follows')
         .select('*', { count: 'exact', head: true })
-        .eq('following_id', id);
+        .eq('following_id', targetId);
       setFollowerCount(count || 0);
 
       // Following status
-      if (user && user.id !== id) {
+      if (user && user.id !== targetId) {
         const { data: followData } = await supabase
           .from('follows')
           .select('follower_id')
           .eq('follower_id', user.id)
-          .eq('following_id', id)
+          .eq('following_id', targetId)
           .single();
         setIsFollowing(!!followData);
       }
     } catch (err) {
-      console.error('Artist fetch error:', err);
+      console.error('User fetch error:', err);
     }
     setLoading(false);
   }
 
   async function toggleFollow() {
-    if (!user || user.id === id) return;
+    if (!user || user.id === profile.id) return;
     if (isFollowing) {
-      await supabase.from('follows').delete().eq('follower_id', user.id).eq('following_id', id);
+      await supabase.from('follows').delete().eq('follower_id', user.id).eq('following_id', profile.id);
       setIsFollowing(false);
       setFollowerCount(c => Math.max(0, c - 1));
     } else {
-      await supabase.from('follows').insert({ follower_id: user.id, following_id: id });
+      await supabase.from('follows').insert({ follower_id: user.id, following_id: profile.id });
       setIsFollowing(true);
       setFollowerCount(c => c + 1);
     }
   }
 
   if (loading) return <div className="page-loader"><div className="loader-spinner" /></div>;
-  if (!artist) return <div className="empty-state"><h3>Artist not found</h3></div>;
+  if (!profile) return <div className="empty-state"><h3>User not found</h3><p>Nobody with the username @{username} exists.</p></div>;
 
   const totalPlays = songs.reduce((sum, s) => sum + (s.play_count || 0), 0);
 
@@ -100,44 +108,49 @@ export default function ArtistPage() {
         <ArrowLeft size={20} /> Back
       </button>
 
-      {/* Artist Header */}
+      {/* Profile Header */}
       <div className="artist-header">
         <div className="artist-avatar-large">
-          {artist.avatar_url ? (
-            <img src={artist.avatar_url} alt={artist.display_name} />
+          {profile.avatar_url ? (
+            <img src={profile.avatar_url} alt={profile.display_name} />
           ) : (
             <Users size={64} className="text-muted" />
           )}
         </div>
         <div className="artist-info">
-          <span className="artist-label">ARTIST</span>
-          <h1 className="artist-name">{artist.display_name || artist.username}</h1>
-          {artist.bio && <p className="artist-bio">{artist.bio}</p>}
+          {profile.is_artist && <span className="artist-label">ARTIST</span>}
+          <h1 className="artist-name">{profile.display_name || profile.username}</h1>
+          <p className="artist-username">@{profile.username}</p>
+          {profile.bio && <p className="artist-bio">{profile.bio}</p>}
           <div className="artist-stats">
-            <div className="artist-stat">
-              <span className="artist-stat-value">{songs.length}</span>
-              <span className="artist-stat-label">Songs</span>
-            </div>
+            {profile.is_artist && (
+              <div className="artist-stat">
+                <span className="artist-stat-value">{songs.length}</span>
+                <span className="artist-stat-label">Songs</span>
+              </div>
+            )}
             <div className="artist-stat">
               <span className="artist-stat-value">{followerCount}</span>
               <span className="artist-stat-label">Followers</span>
             </div>
-            <div className="artist-stat">
-              <span className="artist-stat-value">{totalPlays.toLocaleString()}</span>
-              <span className="artist-stat-label">Plays</span>
-            </div>
+            {profile.is_artist && totalPlays > 0 && (
+              <div className="artist-stat">
+                <span className="artist-stat-value">{totalPlays.toLocaleString()}</span>
+                <span className="artist-stat-label">Plays</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Actions */}
       <div className="artist-actions">
-        {songs.length > 0 && (
+        {songs.length > 0 && profile.is_artist && (
           <button onClick={() => playTrack(songs[0], songs)} className="btn-primary">
             <Play size={18} className="fill-current" /> Play All
           </button>
         )}
-        {user && user.id !== id && (
+        {user && user.id !== profile.id && (
           <button onClick={toggleFollow} className={`btn-follow ${isFollowing ? 'following' : ''}`}>
             {isFollowing ? <><UserMinus size={18} /> Following</> : <><UserPlus size={18} /> Follow</>}
           </button>

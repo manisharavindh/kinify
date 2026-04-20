@@ -5,6 +5,7 @@ import {
   Repeat, Shuffle, ListMusic
 } from 'lucide-react';
 import SongCover from './SongCover';
+import Visualizer from './Visualizer';
 import { usePlayer, formatTime } from '../contexts/PlayerContext';
 
 const FullPlayer = memo(function FullPlayer() {
@@ -39,18 +40,21 @@ const FullPlayer = memo(function FullPlayer() {
             <ChevronDown size={28} />
           </button>
           <div className="fp-now-playing">
-            <span className="fp-label">NOW PLAYING</span>
+            {/* <span className="fp-label">NOW PLAYING</span> */}
             <span className="fp-album">{currentTrack.album?.title || currentTrack.genre || ''}</span>
           </div>
-          <div className="fp-queue-badge">
+          {/* <div className="fp-queue-badge">
             <ListMusic size={18} />
             <span>{currentIndex + 1}/{queue.length}</span>
-          </div>
+          </div> */}
         </div>
 
         {/* Cover Art */}
-        <div className="full-player-art">
-          <SongCover song={currentTrack} className="fp-cover" size="xl" />
+        <div className="full-player-art relative">
+          <SongCover song={currentTrack} className="fp-cover z-10" size="xl" />
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none mix-blend-overlay opacity-30 z-20">
+            <Visualizer width={200} height={80} barWidth={8} gap={4} color="#ffffff" />
+          </div>
         </div>
 
         {/* Bottom controls area */}

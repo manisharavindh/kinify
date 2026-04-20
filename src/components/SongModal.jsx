@@ -1,28 +1,23 @@
 import React, { useState } from 'react';
 import { X, Smile, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
 import IconPicker from './IconPicker';
 import { getIconById, getColorById } from '../data/coverIcons';
 import { GENRES } from '../data/genres';
 
-export default function AlbumModal({ initialData = null, onClose, onSuccess }) {
-  const { user } = useAuth();
+export default function SongModal({ initialData, onClose, onSuccess }) {
   const [title, setTitle] = useState(initialData?.title || '');
-  const [description, setDescription] = useState(initialData?.description || '');
   const [genre, setGenre] = useState(initialData?.genre || 'Other');
-  
   const [iconName, setIconName] = useState(initialData?.icon_name || '');
   const [iconColor, setIconColor] = useState(initialData?.icon_color || 'pink');
+  
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const isEditing = !!initialData;
-
-  const handleCreate = async () => {
+  const handleSave = async () => {
     if (!title.trim()) {
-      setError('Album title is required');
+      setError('Song title is required');
       return;
     }
     setLoading(true);
@@ -31,41 +26,23 @@ export default function AlbumModal({ initialData = null, onClose, onSuccess }) {
     try {
       const payload = {
         title: title.trim(),
-        description: description.trim(),
         genre,
         icon_name: iconName || null,
         icon_color: iconColor || 'pink',
       };
 
-      let resultData;
+      const { data, error: dbError } = await supabase
+        .from('songs')
+        .update(payload)
+        .eq('id', initialData.id)
+        .select()
+        .single();
 
-      if (isEditing) {
-        const { data, error: dbError } = await supabase
-          .from('albums')
-          .update(payload)
-          .eq('id', initialData.id)
-          .select()
-          .single();
-        if (dbError) throw dbError;
-        resultData = data;
-      } else {
-        payload.artist_id = user.id;
-        const { data, error: dbError } = await supabase
-          .from('albums')
-          .insert(payload)
-          .select()
-          .single();
-        if (dbError) throw dbError;
-        resultData = data;
-        
-        // Update profile to artist if creating an album
-        await supabase.from('profiles').update({ is_artist: true }).eq('id', user.id);
-      }
-
-      onSuccess(resultData);
+      if (dbError) throw dbError;
+      onSuccess(data);
     } catch (err) {
       console.error(err);
-      setError('Failed to create album.');
+      setError('Failed to update song.');
     }
     setLoading(false);
   };
@@ -74,7 +51,7 @@ export default function AlbumModal({ initialData = null, onClose, onSuccess }) {
     <div className="icon-picker-overlay animate-fade-in" onClick={onClose} style={{ zIndex: 1100 }}>
       <div className="icon-picker bg-card w-full max-w-lg rounded-3xl" onClick={(e) => e.stopPropagation()}>
         <div className="icon-picker-header border-b border-border/10">
-          <h3>{isEditing ? 'Edit Album' : 'Create Album'}</h3>
+          <h3>Edit Song</h3>
           <button onClick={onClose} className="icon-picker-close"><X size={20} /></button>
         </div>
 
@@ -83,7 +60,7 @@ export default function AlbumModal({ initialData = null, onClose, onSuccess }) {
 
           {/* Icon Selection */}
           <div>
-            <label className="block text-xs font-bold uppercase text-muted tracking-wide mb-3">Album Icon</label>
+            <label className="block text-xs font-bold uppercase text-muted tracking-wide mb-3">Song Icon</label>
             <div 
               className="w-32 aspect-square mx-auto rounded-2xl border-2 border-dashed border-border/50 hover:border-accent/50 cursor-pointer flex flex-col items-center justify-center transition-colors overflow-hidden relative"
               onClick={() => setShowIconPicker(true)}
@@ -111,42 +88,30 @@ export default function AlbumModal({ initialData = null, onClose, onSuccess }) {
                 </div>
               )}
             </div>
-            <p className="text-xs text-muted mt-2 text-center">Set your album's visual identity.</p>
+            <p className="text-xs text-muted mt-2 text-center">Set your song's visual identity.</p>
           </div>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-bold uppercase text-muted tracking-wide mb-2">Album Title</label>
+              <label className="block text-xs font-bold uppercase text-muted tracking-wide mb-2">Song Title</label>
               <input 
                 type="text" 
                 value={title} 
                 onChange={e => setTitle(e.target.value)} 
                 className="w-full bg-background border border-border rounded-xl px-4 py-3 text-primary placeholder:text-muted focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-200 outline-none"
-                placeholder="My Awesome Album"
+                placeholder="My Awesome Song"
               />
             </div>
             
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <label className="block text-xs font-bold uppercase text-muted tracking-wide mb-2">Genre</label>
-                <select 
-                  value={genre} 
-                  onChange={e => setGenre(e.target.value)}
-                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-primary focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-200 outline-none appearance-none cursor-pointer"
-                >
-                  {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
-                </select>
-              </div>
-            </div>
-
             <div>
-              <label className="block text-xs font-bold uppercase text-muted tracking-wide mb-2">Description (Optional)</label>
-              <textarea 
-                value={description} 
-                onChange={e => setDescription(e.target.value)} 
-                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-primary placeholder:text-muted focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-200 outline-none resize-none h-24"
-                placeholder="Tell us about this album..."
-              />
+              <label className="block text-xs font-bold uppercase text-muted tracking-wide mb-2">Genre</label>
+              <select 
+                value={genre} 
+                onChange={e => setGenre(e.target.value)}
+                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-primary focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-200 outline-none appearance-none cursor-pointer"
+              >
+                {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
             </div>
           </div>
         </div>
@@ -155,9 +120,9 @@ export default function AlbumModal({ initialData = null, onClose, onSuccess }) {
           <button onClick={onClose} className="px-6 py-2.5 rounded-full font-semibold text-muted hover:text-primary transition-colors">
             Cancel
           </button>
-          <button onClick={handleCreate} disabled={loading} className="px-6 py-2.5 rounded-full font-semibold bg-accent text-white hover:opacity-90 shadow-lg shadow-accent/20 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100 flex items-center gap-2">
+          <button onClick={handleSave} disabled={loading} className="px-6 py-2.5 rounded-full font-semibold bg-accent text-white hover:opacity-90 shadow-lg shadow-accent/20 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100 flex items-center gap-2">
             {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Check size={18} />}
-            {isEditing ? 'Save Changes' : 'Create Album'}
+            Save Changes
           </button>
         </div>
       </div>

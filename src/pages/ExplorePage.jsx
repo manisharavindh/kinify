@@ -147,7 +147,7 @@ export default function ExplorePage() {
             artists.length > 0 ? (
               <div className="artist-grid">
                 {artists.map((artist) => (
-                  <button key={artist.id} onClick={() => navigate(`/artist/${artist.id}`)} className="card-artist">
+                  <button key={artist.id} onClick={() => navigate(`/${artist.username}`)} className="card-artist">
                     <div className="card-artist-avatar">
                       {artist.avatar_url ? (
                         <img src={artist.avatar_url} alt={artist.display_name} />
@@ -155,8 +155,10 @@ export default function ExplorePage() {
                         <Users size={32} className="text-muted" />
                       )}
                     </div>
-                    <p className="card-artist-name">{artist.display_name || artist.username}</p>
-                    <p className="card-artist-sub">@{artist.username}</p>
+                    <div className="card-artist-info">
+                      <p className="card-artist-name">{artist.display_name || artist.username}</p>
+                      <p className="card-artist-sub">@{artist.username}</p>
+                    </div>
                   </button>
                 ))}
               </div>

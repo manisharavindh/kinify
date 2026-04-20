@@ -7,20 +7,6 @@ const SongCover = memo(function SongCover({ song, className = '', size = 'md' })
   const sizeMap = { sm: 18, md: 28, lg: 40, xl: 56 };
   const iconSize = sizeMap[size] || 28;
 
-  // 1. If there's a cover image URL (uploaded image), show it
-  if (song?.cover_url) {
-    return (
-      <div className={`overflow-hidden ${className}`}>
-        <img
-          src={song.cover_url}
-          alt={song.title || 'Cover'}
-          className="w-full h-full object-cover"
-          loading="lazy"
-        />
-      </div>
-    );
-  }
-
   // 2. If there's an icon_name set, render that icon with its color
   if (song?.icon_name) {
     const iconDef = getIconById(song.icon_name);

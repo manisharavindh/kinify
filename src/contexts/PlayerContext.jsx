@@ -23,23 +23,60 @@ export function PlayerProvider({ children }) {
 
   const audioRef = useRef(null);
   const animRef = useRef(null);
+  const audioCtxRef = useRef(null);
+  const analyserRef = useRef(null);
+  const sourceRef = useRef(null);
   const shuffleBagRef = useRef([]);
   const lastTrackIdRef = useRef(null);
 
   const currentTrack = currentIndex >= 0 && currentIndex < queue.length ? queue[currentIndex] : null;
 
-  // Initialize audio element once
+  // Initialize audio element only (no Web Audio yet — that needs user gesture)
   useEffect(() => {
     if (!audioRef.current) {
-      audioRef.current = new Audio();
-      audioRef.current.preload = 'auto';
+      const audio = new Audio();
+      audio.crossOrigin = 'anonymous';
+      audio.preload = 'auto';
+      audioRef.current = audio;
     }
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.src = '';
       }
+      if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+        audioCtxRef.current.close().catch(() => {});
+      }
     };
+  }, []);
+
+  // Lazy Web Audio init — MUST be called from a user gesture (click/tap handler)
+  const initAudioContext = useCallback(() => {
+    // Already wired up — just resume if suspended
+    if (sourceRef.current) {
+      if (audioCtxRef.current?.state === 'suspended') {
+        audioCtxRef.current.resume();
+      }
+      return;
+    }
+    if (!audioRef.current) return;
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioCtx();
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.85;
+
+      const source = ctx.createMediaElementSource(audioRef.current);
+      source.connect(analyser);
+      analyser.connect(ctx.destination);
+
+      audioCtxRef.current = ctx;
+      analyserRef.current = analyser;
+      sourceRef.current = source;
+    } catch (e) {
+      console.warn('Web Audio API not available:', e);
+    }
   }, []);
 
   // Fetch user's likes
@@ -131,13 +168,18 @@ export function PlayerProvider({ children }) {
   useEffect(() => {
     if (!audioRef.current || !currentTrack) return;
     if (isPlaying) {
+      // Resume AudioContext if it exists and is suspended
+      if (audioCtxRef.current?.state === 'suspended') {
+        audioCtxRef.current.resume();
+      }
       audioRef.current.play().catch(() => setIsPlaying(false));
     } else {
       audioRef.current.pause();
     }
-  }, [isPlaying]);
+  }, [isPlaying, currentTrack]);
 
   const playTrack = useCallback((track, tracklist = null) => {
+    initAudioContext(); // Create AudioContext on first user interaction
     if (tracklist) {
       setQueue(tracklist);
       const idx = tracklist.findIndex(t => t.id === track.id);
@@ -164,12 +206,13 @@ export function PlayerProvider({ children }) {
       });
     }
     setIsPlaying(true);
-  }, [currentTrack, currentIndex]);
+  }, [currentTrack, currentIndex, initAudioContext]);
 
   const togglePlay = useCallback(() => {
     if (!currentTrack) return;
+    initAudioContext(); // Ensure AudioContext is live
     setIsPlaying(p => !p);
-  }, [currentTrack]);
+  }, [currentTrack, initAudioContext]);
 
   const skipForward = useCallback(() => {
     if (queue.length === 0) return;
@@ -236,7 +279,7 @@ export function PlayerProvider({ children }) {
       progress, duration, isRepeat, isShuffle, showFullPlayer, likes,
       playTrack, togglePlay, skipForward, skipBackward, seek,
       setVolume, setIsMuted, setIsRepeat, setIsShuffle,
-      setShowFullPlayer, addToQueue, toggleLike,
+      setShowFullPlayer, addToQueue, toggleLike, getAnalyser: () => analyserRef.current,
     }}>
       {children}
     </PlayerContext.Provider>

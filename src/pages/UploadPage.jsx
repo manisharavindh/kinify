@@ -47,7 +47,7 @@ export default function UploadPage() {
       setAudioName('Studio Recording.wav');
       window.__kinify_recording_blob = null;
     }
-    
+
     // Auto-select album if passed in URL
     const passedAlbumId = searchParams.get('album');
     if (passedAlbumId) {
@@ -246,9 +246,9 @@ export default function UploadPage() {
 
           {/* Cover Art or Icon */}
           <div className="form-group">
-            <label>Cover Art or Icon</label>
+            <label>Cover Icon</label>
             <div className="flex gap-4">
-              <div className="upload-cover-area flex-1" onClick={() => coverInputRef.current?.click()}>
+              {/* <div className="upload-cover-area flex-1" onClick={() => coverInputRef.current?.click()}>
                 {coverPreview ? (
                   <div className="upload-cover-preview">
                     <img src={coverPreview} alt="Cover" />
@@ -263,15 +263,15 @@ export default function UploadPage() {
                   </div>
                 )}
                 <input ref={coverInputRef} type="file" accept="image/*" onChange={handleCoverSelect} hidden />
-              </div>
+              </div> */}
 
               {!coverPreview && (
-                <div 
+                <div
                   className="upload-cover-area flex-1"
                   onClick={() => setShowIconPicker(true)}
                 >
                   {iconName ? (
-                    <div 
+                    <div
                       className="w-full h-full flex flex-col items-center justify-center rounded-[20px] relative"
                       style={{ backgroundColor: getColorById(iconColor).bg }}
                     >
@@ -292,7 +292,6 @@ export default function UploadPage() {
                 </div>
               )}
             </div>
-            <p className="text-xs text-muted mt-2">Upload a custom image OR choose a colorful icon. Images override icons.</p>
           </div>
 
           {/* Metadata */}

@@ -93,7 +93,7 @@ export default function AlbumPage() {
             )}
             <span 
               className="text-primary hover:underline cursor-pointer font-bold"
-              onClick={() => navigate(`/artist/${album.artist?.id}`)}
+              onClick={() => navigate(`/${album.artist?.username}`)}
             >
               {album.artist?.display_name || 'Unknown'}
             </span>
