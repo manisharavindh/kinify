@@ -1,16 +1,46 @@
-# React + Vite
+# Kinify
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Kinify is a simple music streaming and sharing web-app. Built with React and Supabase, it allows users to stream, upload, and interact with people.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Authentication**: Email & Social logins.
+- **Library & Playlists**: Manage your liked songs and custom playlists.
+- **Studio & Upload**: Creators can upload their music easily with custom genres and album covers.
 
-## React Compiler
+## Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Frontend**: React, Vite, Tailwind CSS
+- **Backend/DB**: Supabase (PostgreSQL, Storage, Auth)
 
-## Expanding the ESLint configuration
+## Quick Start
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1. **Clone the repo:**
+   ```bash
+   git clone https://github.com/manisharavindh/kinify.git
+   cd kinify
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Set up Supabase:**
+   - Create a project on [Supabase](https://supabase.com/).
+   - Execute the schema provided in `supabase-schema.sql` via Supabase SQL Editor.
+   - Run the data seed `supabase-seed.sql` if you want initial data.
+   - Set up your `.env` variables using `.env.example` as a template:
+     ```env
+     VITE_SUPABASE_URL=your-project-url
+     VITE_SUPABASE_ANON_KEY=your-anon-key
+     ```
+
+4. **Run the app locally:**
+   ```bash
+   npm run dev
+   ```
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
