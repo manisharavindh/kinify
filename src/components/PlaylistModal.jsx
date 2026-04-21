@@ -1,25 +1,27 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { X, Image, Disc3, Smile, Check, ListMusic } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { X, Image, Smile, Check, Trash2 } from 'lucide-react';
 import { supabase, uploadFile } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import IconPicker from './IconPicker';
 import { getIconById, getColorById } from '../data/coverIcons';
+import { useNavigate } from 'react-router-dom';
 
 export default function PlaylistModal({ initialData = null, onClose, onSuccess }) {
   const { user } = useAuth();
   const [title, setTitle] = useState(initialData?.title || '');
   const [description, setDescription] = useState(initialData?.description || '');
   const [isPublic, setIsPublic] = useState(initialData !== null ? initialData.is_public : true);
-  
+
   const [coverFile, setCoverFile] = useState(null);
   const [coverPreview, setCoverPreview] = useState(initialData?.cover_url || null);
   const [iconName, setIconName] = useState(initialData?.icon_name || '');
   const [iconColor, setIconColor] = useState(initialData?.icon_color || 'pink');
-  
+
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const coverInputRef = useRef(null);
+  const navigate = useNavigate();
 
   const isEditing = !!initialData;
 
@@ -50,7 +52,7 @@ export default function PlaylistModal({ initialData = null, onClose, onSuccess }
         const coverPath = `${user.id}/playlist_${Date.now()}.${coverExt}`;
         coverUrl = await uploadFile('covers', coverPath, coverFile);
       } else if (!coverPreview) {
-        coverUrl = null; // Removed existing image
+        coverUrl = null;
       }
 
       const payload = {
@@ -92,69 +94,78 @@ export default function PlaylistModal({ initialData = null, onClose, onSuccess }
     setLoading(false);
   };
 
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this playlist? This action cannot be undone.')) return;
+    setLoading(true);
+    try {
+      const { error: dbError } = await supabase.from('playlists').delete().eq('id', initialData.id);
+      if (dbError) throw dbError;
+      onClose();
+      navigate('/library');
+    } catch (err) {
+      console.error(err);
+      setError('Failed to delete playlist.');
+    }
+    setLoading(false);
+  };
+
   return (
-    <div className="icon-picker-overlay animate-fade-in" onClick={onClose}>
-      <div className="icon-picker bg-card w-full max-w-lg rounded-3xl" onClick={(e) => e.stopPropagation()}>
-        <div className="icon-picker-header border-b border-border/10">
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
           <h3>{isEditing ? 'Edit Playlist' : 'Create Playlist'}</h3>
-          <button onClick={onClose} className="icon-picker-close"><X size={20} /></button>
+          <button onClick={onClose} className="modal-close"><X size={18} /></button>
         </div>
 
-        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
-          {error && <div className="text-red-500 text-sm">{error}</div>}
+        <div className="modal-body">
+          {error && <div className="modal-error">{error}</div>}
 
           {/* Cover Art or Icon */}
           <div>
-            <label className="block text-xs font-bold uppercase text-muted tracking-wide mb-3">Cover Art</label>
-            <div className="flex gap-4">
-              <div 
-                className="flex-1 aspect-square rounded-2xl border-2 border-dashed border-border/50 hover:border-accent/50 cursor-pointer flex flex-col items-center justify-center transition-colors relative overflow-hidden"
-                onClick={() => coverInputRef.current?.click()}
-              >
+            <span className="modal-label">Cover Art</span>
+            <div className="modal-cover-grid">
+              <div onClick={() => coverInputRef.current?.click()}>
                 {coverPreview ? (
                   <>
-                    <img src={coverPreview} alt="Cover" className="w-full h-full object-cover" />
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setCoverFile(null); setCoverPreview(null); }} 
-                      className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1"
+                    <img src={coverPreview} alt="Cover" className="modal-cover-img" />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setCoverFile(null); setCoverPreview(null); }}
+                      className="modal-cover-remove"
                     >
-                      <X size={14} />
+                      <X size={12} />
                     </button>
                   </>
                 ) : (
-                  <div className="text-muted flex flex-col items-center gap-2">
-                    <Image size={24} />
-                    <span className="text-sm font-medium">Upload Image</span>
+                  <div className="modal-icon-placeholder">
+                    <Image size={22} />
+                    <span>Upload Image</span>
                   </div>
                 )}
                 <input ref={coverInputRef} type="file" accept="image/*" onChange={handleCoverSelect} hidden />
               </div>
 
               {!coverPreview && (
-                <div 
-                  className="flex-1 aspect-square rounded-2xl border-2 border-dashed border-border/50 hover:border-accent/50 cursor-pointer flex flex-col items-center justify-center transition-colors overflow-hidden relative"
-                  onClick={() => setShowIconPicker(true)}
-                >
+                <div onClick={() => setShowIconPicker(true)}>
                   {iconName ? (
-                    <div 
-                      className="w-full h-full flex flex-col items-center justify-center"
+                    <div
+                      className="modal-icon-preview-filled"
                       style={{ backgroundColor: getColorById(iconColor).bg }}
                     >
                       {(() => {
                         const Icon = getIconById(iconName)?.component;
-                        return Icon ? <Icon size={40} style={{ color: getColorById(iconColor).fg }} /> : null;
+                        return Icon ? <Icon size={36} style={{ color: getColorById(iconColor).fg }} /> : null;
                       })()}
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); setIconName(''); }} 
-                        className="absolute top-2 right-2 bg-black/20 hover:bg-black/40 text-black/50 hover:text-black rounded-full p-1 transition-colors"
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setIconName(''); }}
+                        className="modal-icon-remove"
                       >
-                        <X size={14} />
+                        <X size={12} />
                       </button>
                     </div>
                   ) : (
-                    <div className="text-muted flex flex-col items-center gap-2">
-                      <Smile size={24} />
-                      <span className="text-sm font-medium">Choose Icon</span>
+                    <div className="modal-icon-placeholder">
+                      <Smile size={22} />
+                      <span>Choose Icon</span>
                     </div>
                   )}
                 </div>
@@ -162,45 +173,51 @@ export default function PlaylistModal({ initialData = null, onClose, onSuccess }
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
-              <label className="block text-xs font-bold uppercase text-muted tracking-wide mb-2">Playlist Title</label>
-              <input 
-                type="text" 
-                value={title} 
-                onChange={e => setTitle(e.target.value)} 
-                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-primary placeholder:text-muted focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-200 outline-none"
+              <span className="modal-label">Playlist Title</span>
+              <input
+                type="text"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                className="modal-input"
                 placeholder="My Awesome Playlist"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase text-muted tracking-wide mb-2">Description</label>
-              <textarea 
-                value={description} 
-                onChange={e => setDescription(e.target.value)} 
-                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-primary placeholder:text-muted focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-200 outline-none resize-none h-24"
+              <span className="modal-label">Description</span>
+              <textarea
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                className="modal-input modal-textarea"
                 placeholder="A collection of great songs..."
               />
             </div>
 
-            <div className="flex items-center gap-3 py-2 cursor-pointer" onClick={() => setIsPublic(!isPublic)}>
-              <div className={`w-10 h-6 rounded-full flex items-center p-1 transition-colors ${isPublic ? 'bg-accent' : 'bg-border'}`}>
-                <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${isPublic ? 'translate-x-4' : 'translate-x-0'}`} />
+            <div className="toggle-row" onClick={() => setIsPublic(!isPublic)}>
+              <div className={`toggle-track ${isPublic ? 'on' : 'off'}`}>
+                <div className="toggle-thumb" />
               </div>
-              <span className="text-sm font-medium">Make Playlist Public</span>
+              <span className="toggle-label">Make Playlist Public</span>
             </div>
           </div>
         </div>
 
-        <div className="p-6 border-t border-border/10 flex justify-end gap-3 bg-card/50">
-          <button onClick={onClose} className="px-6 py-2.5 rounded-full font-semibold text-muted hover:text-primary transition-colors">
-            Cancel
-          </button>
-          <button onClick={handleSave} disabled={loading} className="px-6 py-2.5 rounded-full font-semibold bg-accent text-white hover:opacity-90 shadow-lg shadow-accent/20 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2">
-            {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Check size={18} />}
-            {isEditing ? 'Save Changes' : 'Create Playlist'}
-          </button>
+        <div className="modal-footer" style={{ justifyContent: isEditing ? 'space-between' : 'flex-end', width: '100%' }}>
+          {isEditing && (
+            <button onClick={handleDelete} disabled={loading} className="btn-ghost" style={{ color: 'var(--color-error)' }}>
+              <Trash2 size={16} style={{ marginRight: '6px' }} />
+              Delete
+            </button>
+          )}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={onClose} className="modal-cancel-btn">Cancel</button>
+            <button onClick={handleSave} disabled={loading} className="modal-save-btn">
+              {loading ? <div className="modal-spinner" /> : <Check size={16} />}
+              {isEditing ? 'Save' : 'Create'}
+            </button>
+          </div>
         </div>
       </div>
 

@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Play, ListMusic, Plus, Search, X, Trash2 } from 'lucide-react';
+import { ArrowLeft, Play, ListMusic, Plus, Search, X, Trash2, Heart, Share2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { usePlayer } from '../contexts/PlayerContext';
 import SongRow from '../components/SongRow';
 import SongCover from '../components/SongCover';
 import PlaylistModal from '../components/PlaylistModal';
-import { getColorById } from '../data/coverIcons';
-import { getGenreGradient } from '../data/genres';
 
 export default function PlaylistDetailPage() {
   const { id } = useParams();
@@ -31,26 +29,53 @@ export default function PlaylistDetailPage() {
   async function fetchPlaylist() {
     setLoading(true);
     try {
-      const { data: plData } = await supabase
-        .from('playlists')
-        .select('*')
-        .eq('id', id)
-        .single();
-      setPlaylist(plData);
-
-      if (plData) {
-        const { data: psData } = await supabase
-          .from('playlist_songs')
+      if (id === 'liked') {
+        const { data: likesData } = await supabase
+          .from('likes')
           .select('song:songs(*, artist:profiles!artist_id(id, username, display_name, avatar_url))')
-          .eq('playlist_id', id)
-          .order('position', { ascending: true });
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
 
-        setSongs(psData?.map(ps => ps.song).filter(Boolean) || []);
+        setPlaylist({
+          id: 'liked',
+          title: 'Liked Songs',
+          description: 'Tracks you have liked',
+          is_public: false,
+          user_id: user?.id,
+          isVirtual: true,
+        });
+        setSongs(likesData?.map(l => l.song).filter(Boolean) || []);
+      } else {
+        const { data: plData } = await supabase
+          .from('playlists')
+          .select('*')
+          .eq('id', id)
+          .single();
+        setPlaylist(plData);
+
+        if (plData) {
+          const { data: psData } = await supabase
+            .from('playlist_songs')
+            .select('song:songs(*, artist:profiles!artist_id(id, username, display_name, avatar_url))')
+            .eq('playlist_id', id)
+            .order('position', { ascending: true });
+
+          setSongs(psData?.map(ps => ps.song).filter(Boolean) || []);
+        }
       }
     } catch (err) {
       console.error('Playlist fetch error:', err);
     }
     setLoading(false);
+  }
+
+  async function handleShare() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      alert('Link copied to clipboard!');
+    } catch (err) {
+      console.error('Failed to copy', err);
+    }
   }
 
   async function searchSongs(q) {
@@ -80,60 +105,58 @@ export default function PlaylistDetailPage() {
     fetchPlaylist();
   }
 
-  const isOwner = user && playlist?.user_id === user.id;
+  const isOwner = user && playlist?.user_id === user.id && !playlist.isVirtual;
 
   if (loading) return <div className="page-loader"><div className="loader-spinner" /></div>;
   if (!playlist) return <div className="empty-state"><h3>Playlist not found</h3></div>;
 
-  const bgGradient = playlist.icon_name 
-    ? `linear-gradient(to bottom, ${getColorById(playlist.icon_color || 'pink').bg}, transparent)`
-    : `linear-gradient(to bottom, ${getGenreGradient('Other')}, transparent)`;
-
   return (
-    <div className="playlist-page relative min-h-full pb-20">
-      {/* Dynamic Background */}
-      <div 
-        className="absolute top-0 left-0 w-full h-[400px] opacity-30 pointer-events-none -z-10"
-        style={{ background: bgGradient, maskImage: 'linear-gradient(to bottom, black, transparent)', WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)' }}
-      />
-
-      <button onClick={() => navigate(-1)} className="btn-ghost flex items-center gap-2 mb-6 w-fit hover:bg-black/5 hover:text-primary transition-colors">
-        <ArrowLeft size={20} /> Back
+    <div className="playlist-page">
+      <button onClick={() => navigate(-1)} className="btn-back">
+        <ArrowLeft size={16} /> Back
       </button>
 
-      {/* Premium Playlist Header */}
-      <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-end mb-8 pl-4">
-        <div className="w-48 h-48 md:w-60 md:h-60 shadow-2xl rounded-2xl overflow-hidden shadow-black/10 flex-shrink-0">
-          <SongCover song={playlist} className="w-full h-full" size="xl" />
-        </div>
-        <div className="flex-1 pb-2">
-          <span className="text-xs font-bold uppercase tracking-[0.2em] text-muted mb-2 block">Premium Playlist {playlist.is_public ? '' : '• Private'}</span>
-          <h1 className="font-display text-4xl md:text-6xl font-black mb-4 tracking-tight leading-tight">{playlist.title}</h1>
-          <div className="flex items-center gap-2 text-sm font-medium text-muted">
+      {/* Playlist Header */}
+      <div className="album-header">
+        {playlist.isVirtual ? (
+          <div className="album-header-cover" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))' }}>
+            <Heart size={64} color="white" fill="white" />
+          </div>
+        ) : (
+          <SongCover song={playlist} className="album-header-cover" size="xl" />
+        )}
+        <div className="album-header-info">
+          <span className="album-header-label">
+            PLAYLIST {playlist.is_public ? '' : '· PRIVATE'}
+          </span>
+          <h1 className="album-header-title">{playlist.title}</h1>
+          <div className="album-header-meta">
             <span>{songs.length} songs</span>
           </div>
-          {playlist.description && <p className="mt-4 text-muted/80 max-w-2xl leading-relaxed text-sm">{playlist.description}</p>}
+          {playlist.description && (
+            <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '8px', lineHeight: '1.5' }}>
+              {playlist.description}
+            </p>
+          )}
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-4 mb-8 px-4">
+      <div className="album-actions">
         {songs.length > 0 && (
-          <button 
-            onClick={() => playTrack(songs[0], songs)} 
-            className="w-14 h-14 bg-accent hover:bg-pink-500 hover:scale-105 active:scale-95 transition-all text-white rounded-full flex items-center justify-center shadow-lg shadow-accent/30"
-          >
-            <Play size={24} className="fill-current ml-1" />
+          <button onClick={() => playTrack(songs[0], songs)} className="btn-primary">
+            <Play size={18} className="fill-current" /> Play All
           </button>
         )}
-        
+        <button onClick={handleShare} className="btn-ghost btn-sm" title="Share Playlist">
+          <Share2 size={16} />
+        </button>
         {isOwner && (
           <>
-            <button onClick={() => setShowEditPlaylist(true)} className="btn-ghost btn-sm border border-border/50 hover:border-accent">
+            <button onClick={() => setShowEditPlaylist(true)} className="btn-ghost btn-sm">
               Edit Details
             </button>
-            <button onClick={() => setShowAddSong(!showAddSong)} className="ml-auto btn-primary btn-sm flex items-center gap-2">
-              {showAddSong ? <X size={16} /> : <Plus size={16} />}
+            <button onClick={() => setShowAddSong(!showAddSong)} className="btn-primary btn-sm">
+              {showAddSong ? <X size={14} /> : <Plus size={14} />}
               {showAddSong ? 'Close' : 'Add Songs'}
             </button>
           </>
@@ -144,7 +167,7 @@ export default function PlaylistDetailPage() {
       {showAddSong && isOwner && (
         <div className="playlist-add-section">
           <div className="search-bar compact">
-            <Search size={18} className="search-icon" />
+            <Search size={16} className="search-icon" />
             <input
               type="text"
               placeholder="Search songs to add..."
@@ -158,10 +181,10 @@ export default function PlaylistDetailPage() {
             <div className="playlist-search-results">
               {searchResults.map(song => (
                 <div key={song.id} className="playlist-search-item">
-                  <span>{song.title}</span>
+                  <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{song.title}</span>
                   <span className="text-muted text-sm">{song.artist?.display_name}</span>
                   <button onClick={() => addSongToPlaylist(song)} className="btn-sm btn-primary">
-                    <Plus size={14} />
+                    <Plus size={12} />
                   </button>
                 </div>
               ))}

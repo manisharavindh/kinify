@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Users, Music, Play, UserPlus, UserMinus, Disc3, ArrowLeft } from 'lucide-react';
+import { Users, Music, Play, UserPlus, UserMinus, Disc3, ArrowLeft, Share2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { usePlayer } from '../contexts/PlayerContext';
@@ -84,6 +84,15 @@ export default function UserPage() {
     setLoading(false);
   }
 
+  async function handleShare() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      alert('Link copied to clipboard!');
+    } catch (err) {
+      console.error('Failed to copy', err);
+    }
+  }
+
   async function toggleFollow() {
     if (!user || user.id === profile.id) return;
     if (isFollowing) {
@@ -105,7 +114,7 @@ export default function UserPage() {
   return (
     <div className="artist-page">
       <button onClick={() => navigate(-1)} className="btn-back">
-        <ArrowLeft size={20} /> Back
+        <ArrowLeft size={16} /> Back
       </button>
 
       {/* Profile Header */}
@@ -150,6 +159,9 @@ export default function UserPage() {
             <Play size={18} className="fill-current" /> Play All
           </button>
         )}
+        <button onClick={handleShare} className="btn-ghost btn-sm" title="Share Profile">
+          <Share2 size={16} />
+        </button>
         {user && user.id !== profile.id && (
           <button onClick={toggleFollow} className={`btn-follow ${isFollowing ? 'following' : ''}`}>
             {isFollowing ? <><UserMinus size={18} /> Following</> : <><UserPlus size={18} /> Follow</>}

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Upload, Music, Image, X, Plus, Check, Disc3, Smile } from 'lucide-react';
+import { Upload, Music, X, Plus, Check, Disc3, Smile } from 'lucide-react';
 import { supabase, uploadFile } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { GENRES } from '../data/genres';
@@ -13,12 +13,9 @@ export default function UploadPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const audioInputRef = useRef(null);
-  const coverInputRef = useRef(null);
 
   const [audioFile, setAudioFile] = useState(null);
   const [audioName, setAudioName] = useState('');
-  const [coverFile, setCoverFile] = useState(null);
-  const [coverPreview, setCoverPreview] = useState(null);
   const [iconName, setIconName] = useState('');
   const [iconColor, setIconColor] = useState('pink');
   const [showIconPicker, setShowIconPicker] = useState(false);
@@ -29,7 +26,7 @@ export default function UploadPage() {
   const [isPublic, setIsPublic] = useState(true);
 
   // Album
-  const [albumMode, setAlbumMode] = useState('none'); // none, new, existing
+  const [albumMode, setAlbumMode] = useState('none');
   const [albumTitle, setAlbumTitle] = useState('');
   const [existingAlbumId, setExistingAlbumId] = useState('');
   const [userAlbums, setUserAlbums] = useState([]);
@@ -48,7 +45,6 @@ export default function UploadPage() {
       window.__kinify_recording_blob = null;
     }
 
-    // Auto-select album if passed in URL
     const passedAlbumId = searchParams.get('album');
     if (passedAlbumId) {
       setAlbumMode('existing');
@@ -85,18 +81,6 @@ export default function UploadPage() {
     setError('');
   };
 
-  const handleCoverSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      setError('Please select a valid image file');
-      return;
-    }
-    setCoverFile(file);
-    setCoverPreview(URL.createObjectURL(file));
-    setError('');
-  };
-
   const getAudioDuration = (file) => {
     return new Promise((resolve) => {
       const audio = new Audio();
@@ -123,14 +107,9 @@ export default function UploadPage() {
       const audioPath = `${user.id}/${songId}.${audioExt}`;
       const audioUrl = await uploadFile('songs', audioPath, audioFile);
 
-      // 2. Upload cover (if any)
+      // 2. No cover file upload in this version
       setProgress(50);
       let coverUrl = null;
-      if (coverFile) {
-        const coverExt = coverFile.name.split('.').pop();
-        const coverPath = `${user.id}/${songId}.${coverExt}`;
-        coverUrl = await uploadFile('covers', coverPath, coverFile);
-      }
 
       // 3. Create / resolve album
       setProgress(70);
@@ -141,7 +120,6 @@ export default function UploadPage() {
           .insert({
             title: albumTitle.trim(),
             artist_id: user.id,
-            cover_url: coverUrl,
             icon_name: iconName || null,
             icon_color: iconColor || 'pink',
             genre,
@@ -184,12 +162,9 @@ export default function UploadPage() {
       setProgress(100);
       setSuccess(true);
 
-      // Reset form after delay
       setTimeout(() => {
         setAudioFile(null);
         setAudioName('');
-        setCoverFile(null);
-        setCoverPreview(null);
         setIconName('');
         setIconColor('pink');
         setTitle('');
@@ -213,7 +188,7 @@ export default function UploadPage() {
       {success ? (
         <div className="upload-success">
           <div className="upload-success-icon">
-            <Check size={48} />
+            <Check size={40} />
           </div>
           <h2>Upload Complete!</h2>
           <p>Your song is now live on Kinify</p>
@@ -228,15 +203,15 @@ export default function UploadPage() {
           <div className="upload-dropzone" onClick={() => audioInputRef.current?.click()}>
             {audioFile ? (
               <div className="upload-file-selected">
-                <Music size={24} className="text-accent" />
+                <Music size={20} className="text-accent" />
                 <span>{audioName}</span>
                 <button onClick={(e) => { e.stopPropagation(); setAudioFile(null); setAudioName(''); }} className="upload-file-remove">
-                  <X size={16} />
+                  <X size={14} />
                 </button>
               </div>
             ) : (
               <>
-                <Upload size={40} className="text-muted" />
+                <Upload size={32} className="text-muted" />
                 <p>Drop audio file here or click to browse</p>
                 <p className="text-muted text-sm">MP3, WAV, OGG, M4A, FLAC — Max 50MB</p>
               </>
@@ -244,51 +219,30 @@ export default function UploadPage() {
             <input ref={audioInputRef} type="file" accept="audio/*" onChange={handleAudioSelect} hidden />
           </div>
 
-          {/* Cover Art or Icon */}
+          {/* Cover Icon */}
           <div className="form-group">
             <label>Cover Icon</label>
-            <div className="flex gap-4">
-              {/* <div className="upload-cover-area flex-1" onClick={() => coverInputRef.current?.click()}>
-                {coverPreview ? (
-                  <div className="upload-cover-preview">
-                    <img src={coverPreview} alt="Cover" />
-                    <button onClick={(e) => { e.stopPropagation(); setCoverFile(null); setCoverPreview(null); }} className="upload-cover-remove">
-                      <X size={14} />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="upload-cover-placeholder">
-                    <Image size={24} />
-                    <span>Upload Image</span>
-                  </div>
-                )}
-                <input ref={coverInputRef} type="file" accept="image/*" onChange={handleCoverSelect} hidden />
-              </div> */}
-
-              {!coverPreview && (
+            <div
+              className="upload-cover-area"
+              onClick={() => setShowIconPicker(true)}
+            >
+              {iconName ? (
                 <div
-                  className="upload-cover-area flex-1"
-                  onClick={() => setShowIconPicker(true)}
+                  className="upload-cover-preview"
+                  style={{ backgroundColor: getColorById(iconColor).bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
-                  {iconName ? (
-                    <div
-                      className="w-full h-full flex flex-col items-center justify-center rounded-[20px] relative"
-                      style={{ backgroundColor: getColorById(iconColor).bg }}
-                    >
-                      {(() => {
-                        const Icon = getIconById(iconName)?.component;
-                        return Icon ? <Icon size={32} style={{ color: getColorById(iconColor).fg }} /> : null;
-                      })()}
-                      <button onClick={(e) => { e.stopPropagation(); setIconName(''); }} className="upload-cover-remove">
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="upload-cover-placeholder">
-                      <Smile size={24} />
-                      <span>Choose Icon</span>
-                    </div>
-                  )}
+                  {(() => {
+                    const Icon = getIconById(iconName)?.component;
+                    return Icon ? <Icon size={28} style={{ color: getColorById(iconColor).fg }} /> : null;
+                  })()}
+                  <button onClick={(e) => { e.stopPropagation(); setIconName(''); }} className="upload-cover-remove">
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : (
+                <div className="upload-cover-placeholder">
+                  <Smile size={20} />
+                  <span>Choose Icon</span>
                 </div>
               )}
             </div>
@@ -318,11 +272,11 @@ export default function UploadPage() {
             <div className="album-mode-btns">
               <button onClick={() => setAlbumMode('none')} className={`btn-sm ${albumMode === 'none' ? 'btn-primary' : 'btn-ghost'}`}>No Album</button>
               <button onClick={() => setAlbumMode('new')} className={`btn-sm ${albumMode === 'new' ? 'btn-primary' : 'btn-ghost'}`}>
-                <Plus size={14} /> New Album
+                <Plus size={12} /> New
               </button>
               {userAlbums.length > 0 && (
                 <button onClick={() => setAlbumMode('existing')} className={`btn-sm ${albumMode === 'existing' ? 'btn-primary' : 'btn-ghost'}`}>
-                  <Disc3 size={14} /> Existing
+                  <Disc3 size={12} /> Existing
                 </button>
               )}
             </div>
@@ -356,7 +310,7 @@ export default function UploadPage() {
               </>
             ) : (
               <>
-                <Upload size={20} /> Upload Song
+                <Upload size={18} /> Upload Song
               </>
             )}
           </button>

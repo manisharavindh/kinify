@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Play, Heart, Clock, Disc3 } from 'lucide-react';
+import { ArrowLeft, Play, Heart, Disc3, Share2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { usePlayer } from '../contexts/PlayerContext';
 import SongRow from '../components/SongRow';
 import SongCover from '../components/SongCover';
 import { useAuth } from '../contexts/AuthContext';
-import { getColorById } from '../data/coverIcons';
-import { getGenreGradient, GENRES } from '../data/genres';
-
 import AlbumModal from '../components/AlbumModal';
 
 export default function AlbumPage() {
@@ -51,59 +48,46 @@ export default function AlbumPage() {
     setLoading(false);
   }
 
+  async function handleShare() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      alert('Link copied to clipboard!');
+    } catch (err) {
+      console.error('Failed to copy', err);
+    }
+  }
+
   if (loading) return <div className="page-loader"><div className="loader-spinner" /></div>;
   if (!album) return <div className="empty-state"><h3>Album not found</h3></div>;
 
   const totalDuration = songs.reduce((sum, s) => sum + (s.duration || 0), 0);
   const isOwner = user?.id === album.artist_id;
 
-  // Derive a dynamic background based on album metadata
-  const bgGradient = album.icon_name 
-    ? `linear-gradient(to bottom, ${getColorById(album.icon_color || 'pink').bg}, transparent)`
-    : `linear-gradient(to bottom, ${getGenreGradient(album.genre || 'Other')}, transparent)`;
-
   return (
-    <div className="album-page relative min-h-full pb-20">
-      {/* Dynamic Background */}
-      <div 
-        className="absolute top-0 left-0 w-full h-[400px] opacity-30 pointer-events-none -z-10"
-        style={{ background: bgGradient, maskImage: 'linear-gradient(to bottom, black, transparent)', WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)' }}
-      />
-
-      <button onClick={() => navigate(-1)} className="btn-ghost flex items-center gap-2 mb-6 w-fit hover:bg-black/5 hover:text-primary transition-colors">
-        <ArrowLeft size={20} /> Back
+    <div className="album-page">
+      <button onClick={() => navigate(-1)} className="btn-back">
+        <ArrowLeft size={16} /> Back
       </button>
 
-      {/* Premium Album Header */}
-      <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-end mb-8 pl-4">
-        <div className="w-48 h-48 md:w-60 md:h-60 shadow-2xl rounded-2xl overflow-hidden shadow-black/10 flex-shrink-0">
-          <SongCover song={album} className="w-full h-full" size="xl" />
-        </div>
-        <div className="flex-1 pb-2">
-          <span className="text-xs font-bold uppercase tracking-[0.2em] text-muted mb-2 block">Premium Album</span>
-          <h1 className="font-display text-4xl md:text-6xl font-black mb-4 tracking-tight leading-tight">{album.title}</h1>
-          
-          <div className="flex items-center gap-2 text-sm font-medium text-muted">
-            {album.artist?.avatar_url ? (
-              <img src={album.artist.avatar_url} className="w-6 h-6 rounded-full object-cover" alt="artist" />
-            ) : (
-              <div className="w-6 h-6 rounded-full bg-accent text-white flex items-center justify-center text-[10px]">
-                {album.artist?.display_name?.charAt(0) || 'A'}
-              </div>
-            )}
-            <span 
-              className="text-primary hover:underline cursor-pointer font-bold"
-              onClick={() => navigate(`/${album.artist?.username}`)}
-            >
-              {album.artist?.display_name || 'Unknown'}
-            </span>
-            <span>•</span>
-            <span>{new Date(album.release_date).getFullYear()}</span>
-            <span>•</span>
-            <span>{songs.length} songs, {Math.floor(totalDuration / 60)} min</span>
+      {/* Album Header */}
+      <div className="album-header">
+        <SongCover song={album} className="album-header-cover" size="xl" />
+        <div className="album-header-info">
+          <span className="album-header-label">ALBUM</span>
+          <h1 className="album-header-title">{album.title}</h1>
+          <p
+            className="album-header-artist"
+            onClick={() => navigate(`/${album.artist?.username}`)}
+          >
+            {album.artist?.display_name || 'Unknown'}
+          </p>
+          <div className="album-header-meta">
+            <span>{songs.length} songs</span>
+            <span>·</span>
+            <span>{Math.floor(totalDuration / 60)} min</span>
           </div>
           {album.description && (
-            <p className="mt-4 text-muted/80 max-w-2xl leading-relaxed text-sm">
+            <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '8px', lineHeight: '1.5' }}>
               {album.description}
             </p>
           )}
@@ -111,67 +95,46 @@ export default function AlbumPage() {
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-4 mb-8 px-4">
+      <div className="album-actions">
         {songs.length > 0 && (
-          <button 
-            onClick={() => playTrack(songs[0], songs)} 
-            className="w-14 h-14 bg-accent hover:bg-pink-500 hover:scale-105 active:scale-95 transition-all text-white rounded-full flex items-center justify-center shadow-lg shadow-accent/30"
-          >
-            <Play size={24} className="fill-current ml-1" />
+          <button onClick={() => playTrack(songs[0], songs)} className="btn-primary">
+            <Play size={18} className="fill-current" /> Play All
           </button>
         )}
-        <button className="w-10 h-10 border border-border/50 hover:border-accent hover:text-accent rounded-full flex items-center justify-center transition-colors">
-          <Heart size={20} />
+        <button onClick={handleShare} className="btn-ghost btn-sm" title="Share Album">
+          <Share2 size={16} />
         </button>
-        
         {isOwner && (
           <>
-            <button 
-              onClick={() => setShowEditAlbum(true)}
-              className="btn-ghost btn-sm border border-border/50 hover:border-accent"
-            >
+            <button onClick={() => setShowEditAlbum(true)} className="btn-ghost btn-sm">
               Edit Details
             </button>
-            <button 
-              onClick={() => navigate(`/upload?album=${album.id}`)}
-              className="ml-auto btn-primary btn-sm flex items-center gap-2"
-            >
-              <Disc3 size={16} /> Add Songs
+            <button onClick={() => navigate(`/upload?album=${album.id}`)} className="btn-primary btn-sm">
+              <Disc3 size={14} /> Add Songs
             </button>
           </>
         )}
       </div>
 
       {/* Songs List */}
-      <div className="px-4">
-        {songs.length > 0 ? (
-          <div className="song-list">
-            {/* Headers */}
-            <div className="flex items-center px-4 py-2 text-xs font-bold uppercase text-muted tracking-wide border-b border-border/30 mb-2">
-              <span className="w-8">#</span>
-              <span className="flex-1">Title</span>
-              <span className="w-16 flex justify-end"><Clock size={14} /></span>
-            </div>
-            {songs.map((song, i) => (
-              <SongRow key={song.id} song={song} index={i} tracklist={songs} showArtist={false} />
-            ))}
-          </div>
-        ) : (
-          <div className="empty-state small mt-12">
-            <Disc3 size={48} className="text-muted/50" />
-            <h3 className="text-lg mt-4 font-semibold">It's a bit quiet here</h3>
-            <p className="text-muted text-sm mt-1">This album doesn't have any songs yet.</p>
-            {isOwner && (
-              <button 
-                onClick={() => navigate(`/upload?album=${album.id}`)}
-                className="mt-6 btn-primary"
-              >
-                Upload to Album
-              </button>
-            )}
-          </div>
-        )}
-      </div>
+      {songs.length > 0 ? (
+        <div className="song-list">
+          {songs.map((song, i) => (
+            <SongRow key={song.id} song={song} index={i} tracklist={songs} showArtist={false} />
+          ))}
+        </div>
+      ) : (
+        <div className="empty-state small">
+          <Disc3 size={40} className="text-muted" />
+          <h3>No songs yet</h3>
+          <p>This album doesn't have any songs yet.</p>
+          {isOwner && (
+            <button onClick={() => navigate(`/upload?album=${album.id}`)} className="btn-primary">
+              Upload to Album
+            </button>
+          )}
+        </div>
+      )}
 
       {showEditAlbum && (
         <AlbumModal

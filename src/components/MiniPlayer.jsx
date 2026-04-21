@@ -18,9 +18,9 @@ const MiniPlayer = memo(function MiniPlayer() {
         <div className="mini-player-progress-fill" style={{ width: `${pct}%` }} />
       </div>
       <div className="mini-player-content">
-        <div className="relative">
+        <div className="mini-player-cover-wrap">
           <SongCover song={currentTrack} className="mini-player-cover" size="sm" />
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none mix-blend-screen opacity-60">
+          <div className="mini-player-visualizer">
             <Visualizer width={36} height={20} barWidth={2} gap={2} color="#ffffff" />
           </div>
         </div>
@@ -33,14 +33,14 @@ const MiniPlayer = memo(function MiniPlayer() {
           className={`mini-player-btn ${isLiked ? 'text-accent' : ''}`}
           aria-label={isLiked ? 'Unlike' : 'Like'}
         >
-          <Heart size={20} className={isLiked ? 'fill-current' : ''} />
+          <Heart size={18} className={isLiked ? 'fill-current' : ''} />
         </button>
         <button
           onClick={(e) => { e.stopPropagation(); togglePlay(); }}
           className="mini-player-btn text-accent"
           aria-label={isPlaying ? 'Pause' : 'Play'}
         >
-          {isPlaying ? <Pause size={24} className="fill-current" /> : <Play size={24} className="fill-current" />}
+          {isPlaying ? <Pause size={22} className="fill-current" /> : <Play size={22} className="fill-current" />}
         </button>
       </div>
     </div>

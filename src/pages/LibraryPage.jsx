@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, ListMusic, Clock, Plus, Music, X, Disc3 } from 'lucide-react';
+import { Heart, ListMusic, Plus, Music, X, Disc3 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { usePlayer } from '../contexts/PlayerContext';
@@ -13,14 +13,13 @@ export default function LibraryPage() {
   const { user } = useAuth();
   const { playTrack, likes } = usePlayer();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('liked');
+  const [activeTab, setActiveTab] = useState('playlists');
   const [likedSongs, setLikedSongs] = useState([]);
   const [playlists, setPlaylists] = useState([]);
   const [myUploads, setMyUploads] = useState([]);
   const [myAlbums, setMyAlbums] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreatePlaylist, setShowCreatePlaylist] = useState(false);
-  const [newPlaylistName, setNewPlaylistName] = useState('');
   const [showCreateAlbum, setShowCreateAlbum] = useState(false);
 
   useEffect(() => {
@@ -71,28 +70,8 @@ export default function LibraryPage() {
     setLoading(false);
   }
 
-  async function createPlaylist() {
-    if (!newPlaylistName.trim()) return;
-    const { error } = await supabase.from('playlists').insert({
-      title: newPlaylistName.trim(),
-      user_id: user.id,
-    });
-    if (!error) {
-      setNewPlaylistName('');
-      setShowCreatePlaylist(false);
-      fetchLibrary();
-    }
-  }
-
-  async function deletePlaylist(id) {
-    if (!confirm('Delete this playlist?')) return;
-    await supabase.from('playlists').delete().eq('id', id);
-    fetchLibrary();
-  }
-
   const tabs = [
-    { id: 'liked', label: 'Liked', icon: Heart, count: likedSongs.length },
-    { id: 'playlists', label: 'Playlists', icon: ListMusic, count: playlists.length },
+    { id: 'playlists', label: 'Playlists', icon: ListMusic, count: playlists.length + 1 }, // +1 for Liked Songs
     { id: 'uploads', label: 'My Music', icon: Music, count: myUploads.length },
     { id: 'albums', label: 'Albums', icon: Disc3, count: myAlbums.length },
   ];
@@ -113,7 +92,7 @@ export default function LibraryPage() {
             onClick={() => setActiveTab(tab.id)}
             className={`explore-tab ${activeTab === tab.id ? 'active' : ''}`}
           >
-            <tab.icon size={16} />
+            <tab.icon size={14} />
             <span>{tab.label}</span>
             <span className="explore-tab-count">{tab.count}</span>
           </button>
@@ -122,63 +101,46 @@ export default function LibraryPage() {
 
       {/* Content */}
       <div className="library-content">
-        {activeTab === 'liked' && (
-          likedSongs.length > 0 ? (
-            <div className="song-list">
-              {likedSongs.map((song, i) => (
-                <SongRow key={song.id} song={song} index={i} tracklist={likedSongs} />
-              ))}
-            </div>
-          ) : (
-            <div className="empty-state">
-              <Heart size={48} className="text-muted" />
-              <h3>No liked songs yet</h3>
-              <p>Songs you like will appear here</p>
-            </div>
-          )
-        )}
 
         {activeTab === 'playlists' && (
           <div>
-            <button onClick={() => setShowCreatePlaylist(true)} className="btn-primary btn-sm mb-4 flex items-center gap-2">
-              <Plus size={18} /> New Playlist
+            <button onClick={() => setShowCreatePlaylist(true)} className="btn-primary btn-sm mb-4" style={{ display: 'inline-flex', gap: '6px' }}>
+              <Plus size={16} /> New Playlist
             </button>
 
-            {playlists.length > 0 ? (
               <div className="playlist-grid">
+                {/* Liked Songs Virtual Playlist */}
+                <div className="card-playlist" onClick={() => navigate('/playlist/liked')}>
+                  <div className="card-playlist-cover" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))' }}>
+                    <Heart size={48} color="white" fill="white" />
+                  </div>
+                  <div className="card-playlist-info">
+                    <p className="card-playlist-title">Liked Songs</p>
+                    <p className="card-playlist-count">{likedSongs.length} songs</p>
+                  </div>
+                </div>
+
+                {/* User Playlists */}
                 {playlists.map(pl => (
                   <div key={pl.id} className="card-playlist" onClick={() => navigate(`/playlist/${pl.id}`)}>
                     <div className="card-playlist-cover">
-                        <SongCover song={pl} className="w-full h-full" size="xl" />
+                      <SongCover song={pl} className="w-full h-full" size="md" />
                     </div>
                     <div className="card-playlist-info">
                       <p className="card-playlist-title">{pl.title}</p>
                       <p className="card-playlist-count">{pl.playlist_songs?.[0]?.count || 0} songs</p>
                     </div>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); deletePlaylist(pl.id); }}
-                      className="card-playlist-delete"
-                    >
-                      <X size={14} />
-                    </button>
                   </div>
                 ))}
               </div>
-            ) : !showCreatePlaylist && (
-              <div className="empty-state">
-                <ListMusic size={48} className="text-muted" />
-                <h3>No playlists yet</h3>
-                <p>Create your first playlist</p>
-              </div>
-            )}
           </div>
         )}
 
         {activeTab === 'uploads' && (
           myUploads.length > 0 ? (
             <div>
-              <button onClick={() => navigate('/upload')} className="btn-primary btn-sm mb-4">
-                <Plus size={18} /> Upload Song
+              <button onClick={() => navigate('/upload')} className="btn-primary btn-sm mb-4" style={{ display: 'inline-flex', gap: '6px' }}>
+                <Plus size={16} /> Upload Song
               </button>
               <div className="song-list">
                 {myUploads.map((song, i) => (
@@ -188,7 +150,7 @@ export default function LibraryPage() {
             </div>
           ) : (
             <div className="empty-state">
-              <Music size={48} className="text-muted" />
+              <Music size={40} className="text-muted" />
               <h3>No uploads yet</h3>
               <p>Share your music with the world</p>
               <button onClick={() => navigate('/upload')} className="btn-primary">
@@ -200,8 +162,8 @@ export default function LibraryPage() {
 
         {activeTab === 'albums' && (
           <div>
-            <button onClick={() => setShowCreateAlbum(true)} className="btn-primary btn-sm mb-4">
-              <Plus size={18} /> Create Album
+            <button onClick={() => setShowCreateAlbum(true)} className="btn-primary btn-sm mb-4" style={{ display: 'inline-flex', gap: '6px' }}>
+              <Plus size={16} /> Create Album
             </button>
             {myAlbums.length > 0 ? (
               <div className="album-grid">
@@ -215,7 +177,7 @@ export default function LibraryPage() {
               </div>
             ) : (
               <div className="empty-state">
-                <Disc3 size={48} className="text-muted" />
+                <Disc3 size={40} className="text-muted" />
                 <h3>No albums yet</h3>
                 <p>Create an album to organize your music</p>
                 <button onClick={() => setShowCreateAlbum(true)} className="btn-primary">

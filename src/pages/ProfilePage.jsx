@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase, uploadFile } from '../lib/supabase';
-import { Camera, Save, LogOut, Shield, Music, Users, Settings, ExternalLink } from 'lucide-react';
+import { Camera, Save, LogOut, Shield, Music, Users, Settings, ExternalLink, Share2 } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user, profile, updateProfile, signOut, linkGoogle, updatePassword, deleteAccount } = useAuth();
@@ -58,6 +58,18 @@ export default function ProfilePage() {
     setTimeout(() => setMessage(''), 3000);
   };
 
+  const handleShare = async () => {
+    try {
+      const publicUrl = `${window.location.origin}/${profile.username}`;
+      await navigator.clipboard.writeText(publicUrl);
+      setMessage('Public link copied to clipboard!');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      console.error('Failed to copy', err);
+      setMessage('Failed to copy link');
+    }
+  };
+
   const handleLogout = async () => {
     await signOut();
     navigate('/auth');
@@ -102,10 +114,10 @@ export default function ProfilePage() {
             {profile.avatar_url ? (
               <img src={profile.avatar_url} alt={profile.display_name} />
             ) : (
-              <Users size={48} className="text-muted" />
+              <Users size={40} className="text-muted" />
             )}
             <div className="profile-avatar-overlay">
-              {avatarUploading ? <div className="loader-spinner small" /> : <Camera size={20} />}
+              {avatarUploading ? <div className="loader-spinner small" /> : <Camera size={18} />}
             </div>
           </div>
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} hidden />
@@ -126,13 +138,18 @@ export default function ProfilePage() {
       <div className="profile-section">
         <div className="section-header">
           <div className="section-header-left">
-            <Settings size={20} className="text-accent" />
+            <Settings size={18} className="text-accent" />
             <h2>Profile Settings</h2>
           </div>
           {!editing && (
-            <button onClick={() => { setEditing(true); setForm({ username: profile.username || '', display_name: profile.display_name || '', bio: profile.bio || '', website: profile.website || '', is_artist: profile.is_artist || false }); }} className="btn-ghost btn-sm">
-              Edit
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={handleShare} className="btn-ghost btn-sm" title="Share Public Profile">
+                <Share2 size={16} /> Share Profile
+              </button>
+              <button onClick={() => { setEditing(true); setForm({ username: profile.username || '', display_name: profile.display_name || '', bio: profile.bio || '', website: profile.website || '', is_artist: profile.is_artist || false }); }} className="btn-ghost btn-sm">
+                Edit
+              </button>
+            </div>
           )}
         </div>
 
@@ -162,7 +179,7 @@ export default function ProfilePage() {
             </div>
             <div className="form-actions">
               <button onClick={handleSave} className="btn-primary" disabled={saving}>
-                {saving ? <div className="loader-spinner small" /> : <><Save size={16} /> Save</>}
+                {saving ? <div className="loader-spinner small" /> : <><Save size={14} /> Save</>}
               </button>
               <button onClick={() => setEditing(false)} className="btn-ghost">Cancel</button>
             </div>
@@ -172,7 +189,7 @@ export default function ProfilePage() {
             {profile.bio && <p className="profile-bio">{profile.bio}</p>}
             {profile.website && (
               <a href={profile.website} target="_blank" rel="noopener noreferrer" className="profile-link">
-                <ExternalLink size={14} /> {profile.website}
+                <ExternalLink size={13} /> {profile.website}
               </a>
             )}
             <p className="profile-email">
@@ -186,21 +203,21 @@ export default function ProfilePage() {
       </div>
 
       {/* Account Security */}
-      <div className="profile-section mt-8">
+      <div className="profile-section">
         <div className="section-header">
           <div className="section-header-left">
-            <Shield size={20} className="text-accent" />
+            <Shield size={18} className="text-accent" />
             <h2>Account Security</h2>
           </div>
         </div>
         
-        <div className="security-actions space-y-6 pt-4">
-          <div className="flex flex-col gap-2">
-            <h3 className="font-bold text-sm text-foreground">Link Accounts</h3>
+        <div className="security-section">
+          <div className="security-group">
+            <h3>Link Accounts</h3>
             {user?.app_metadata?.providers?.includes('google') ? (
-              <div className="text-sm text-muted bg-white/5 p-3 rounded-lg border border-white/5 flex items-center justify-between max-w-sm">
-                <span className="flex items-center gap-2">
-                  <svg width="18" height="18" viewBox="0 0 24 24">
+              <div className="security-linked-badge">
+                <span className="badge-label">
+                  <svg width="16" height="16" viewBox="0 0 24 24">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
                     <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
                     <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
@@ -208,11 +225,11 @@ export default function ProfilePage() {
                   </svg>
                   Google Account
                 </span>
-                <span className="text-accent font-medium text-xs uppercase tracking-wider">Linked ✓</span>
+                <span className="badge-status">Linked ✓</span>
               </div>
             ) : (
-              <button onClick={handleLinkGoogle} className="auth-google w-full max-w-sm" style={{ marginBottom: 0 }}>
-                <svg width="18" height="18" viewBox="0 0 24 24">
+              <button onClick={handleLinkGoogle} className="auth-google">
+                <svg width="16" height="16" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
                   <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
@@ -223,29 +240,29 @@ export default function ProfilePage() {
             )}
           </div>
 
-          <div className="flex flex-col gap-2">
-            <h3 className="font-bold text-sm text-foreground">Change Password</h3>
+          <div className="security-group">
+            <h3>Change Password</h3>
             {user?.app_metadata?.providers?.length === 1 && user?.app_metadata?.providers?.[0] === 'google' ? (
-              <p className="text-sm text-muted">You are signed in exclusively via Google. Check your Google account to change your password.</p>
+              <p>You are signed in via Google. Check your Google account to change your password.</p>
             ) : (
-              <form onSubmit={handleUpdatePassword} className="flex gap-2 max-w-sm">
+              <form onSubmit={handleUpdatePassword} className="security-password-form">
                 <input
                   type="password"
                   placeholder="New Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="form-input py-2"
+                  className="form-input"
                   minLength={6}
                 />
-                <button type="submit" className="btn-primary py-2 px-4 whitespace-nowrap">Update</button>
+                <button type="submit" className="btn-primary btn-sm" style={{ whiteSpace: 'nowrap' }}>Update</button>
               </form>
             )}
           </div>
 
-          <div className="flex flex-col gap-2 pt-4 border-t border-border/50">
-            <h3 className="font-bold text-sm text-red-500">Danger Zone</h3>
-            <p className="text-xs text-muted mb-2">Deleting your account will permanently remove your profile, uploads, and data.</p>
-            <button onClick={handleDeleteAccount} className="btn-danger w-fit">
+          <div className="danger-zone">
+            <h3>Danger Zone</h3>
+            <p>Deleting your account will permanently remove your profile, uploads, and data.</p>
+            <button onClick={handleDeleteAccount} className="btn-danger btn-sm" style={{ alignSelf: 'flex-start' }}>
               Delete Account
             </button>
           </div>
@@ -256,20 +273,20 @@ export default function ProfilePage() {
       <div className="profile-section">
         <div className="profile-links">
           <button onClick={() => navigate('/library')} className="profile-link-item">
-            <Music size={20} /> My Library
+            <Music size={18} /> My Library
           </button>
           <button onClick={() => navigate('/upload')} className="profile-link-item">
-            <Music size={20} /> Upload Music
+            <Music size={18} /> Upload Music
           </button>
           <button onClick={() => navigate('/studio')} className="profile-link-item">
-            <Music size={20} /> Recording Studio
+            <Music size={18} /> Recording Studio
           </button>
         </div>
       </div>
 
       {/* Logout */}
       <button onClick={handleLogout} className="btn-danger">
-        <LogOut size={18} /> Sign Out
+        <LogOut size={16} /> Sign Out
       </button>
     </div>
   );

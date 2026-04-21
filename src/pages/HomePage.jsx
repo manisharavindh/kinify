@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, Clock, Disc3, Users, ChevronRight, Play } from 'lucide-react';
+import { TrendingUp, Clock, Disc3, Users, Play } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { usePlayer } from '../contexts/PlayerContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -30,7 +30,7 @@ export default function HomePage() {
         .select('*, artist:profiles!artist_id(id, username, display_name, avatar_url), album:albums!album_id(id, title, cover_url)')
         .eq('is_public', true)
         .order('play_count', { ascending: false })
-        .limit(10);
+        .limit(3);
 
       // New releases
       const { data: newData } = await supabase
@@ -40,7 +40,7 @@ export default function HomePage() {
         .order('created_at', { ascending: false })
         .limit(10);
 
-      // Featured artists (artists with most songs)
+      // Featured artists
       const { data: artistsData } = await supabase
         .from('profiles')
         .select('*, songs:songs(count)')
@@ -48,7 +48,7 @@ export default function HomePage() {
         .order('created_at', { ascending: false })
         .limit(8);
 
-      // Recently played (for logged in user)
+      // Recently played
       let recentData = [];
       if (user) {
         const { data: historyData } = await supabase
@@ -101,13 +101,13 @@ export default function HomePage() {
           <p className="home-hero-sub">Stream, create, and share your sounds</p>
         </div>
         <div className="home-hero-art">
-          <Disc3 size={120} className="text-accent/20 animate-spin-slow" />
+          <Disc3 size={80} className="text-accent animate-spin-slow" style={{ opacity: 0.2 }} />
         </div>
       </div>
 
       {!hasContent && (
         <div className="empty-state">
-          <Disc3 size={64} className="text-muted" />
+          <Disc3 size={48} className="text-muted" />
           <h3>No songs yet</h3>
           <p>Be the first to upload music! Head to the Studio or Upload page.</p>
           <button className="btn-primary" onClick={() => navigate('/upload')}>
@@ -121,7 +121,7 @@ export default function HomePage() {
         <section className="home-section">
           <div className="section-header">
             <div className="section-header-left">
-              <TrendingUp size={20} className="text-accent" />
+              <TrendingUp size={18} className="text-accent" />
               <h2>Trending Now</h2>
             </div>
           </div>
@@ -133,12 +133,12 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* New Releases - Horizontal scroll cards */}
+      {/* New Releases */}
       {newReleases.length > 0 && (
         <section className="home-section">
           <div className="section-header">
             <div className="section-header-left">
-              <Clock size={20} className="text-accent" />
+              <Clock size={18} className="text-accent" />
               <h2>New Releases</h2>
             </div>
           </div>
@@ -148,7 +148,7 @@ export default function HomePage() {
                 <div className="card-song-cover">
                   <SongCover song={song} className="card-song-img" size="lg" />
                   <div className="card-song-play">
-                    <Play size={20} className="fill-current" />
+                    <Play size={16} className="fill-current" />
                   </div>
                 </div>
                 <p className="card-song-title">{song.title}</p>
@@ -164,7 +164,7 @@ export default function HomePage() {
         <section className="home-section">
           <div className="section-header">
             <div className="section-header-left">
-              <Clock size={20} className="text-accent" />
+              <Clock size={18} className="text-accent" />
               <h2>Recently Played</h2>
             </div>
           </div>
@@ -174,7 +174,7 @@ export default function HomePage() {
                 <div className="card-song-cover">
                   <SongCover song={song} className="card-song-img" size="lg" />
                   <div className="card-song-play">
-                    <Play size={20} className="fill-current" />
+                    <Play size={16} className="fill-current" />
                   </div>
                 </div>
                 <p className="card-song-title">{song.title}</p>
@@ -185,28 +185,28 @@ export default function HomePage() {
         </section>
       )}
 
-
-
       {/* Featured Artists */}
       {featuredArtists.length > 0 && (
         <section className="home-section">
           <div className="section-header">
             <div className="section-header-left">
-              <Users size={20} className="text-accent" />
+              <Users size={18} className="text-accent" />
               <h2>Artists</h2>
             </div>
           </div>
-          <div className="horizontal-scroll">
+          <div className="artist-grid">
             {featuredArtists.map((artist) => (
               <button key={artist.id} onClick={() => navigate(`/${artist.username}`)} className="card-artist">
                 <div className="card-artist-avatar">
                   {artist.avatar_url ? (
                     <img src={artist.avatar_url} alt={artist.display_name} />
                   ) : (
-                    <Users size={32} className="text-muted" />
+                    <Users size={24} className="text-muted" />
                   )}
                 </div>
-                <p className="card-artist-name">{artist.display_name || artist.username}</p>
+                <div className="card-artist-info">
+                  <p className="card-artist-name">{artist.display_name || artist.username}</p>
+                </div>
               </button>
             ))}
           </div>

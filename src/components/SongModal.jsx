@@ -48,67 +48,68 @@ export default function SongModal({ initialData, onClose, onSuccess }) {
   };
 
   return (
-    <div className="icon-picker-overlay animate-fade-in" onClick={onClose} style={{ zIndex: 1100 }}>
-      <div className="icon-picker bg-card w-full max-w-lg rounded-3xl" onClick={(e) => e.stopPropagation()}>
-        <div className="icon-picker-header border-b border-border/10">
+    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1100 }}>
+      <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
           <h3>Edit Song</h3>
-          <button onClick={onClose} className="icon-picker-close"><X size={20} /></button>
+          <button onClick={onClose} className="modal-close"><X size={18} /></button>
         </div>
 
-        <div className="p-6 space-y-6">
-          {error && <div className="text-red-500 text-sm">{error}</div>}
+        <div className="modal-body">
+          {error && <div className="modal-error">{error}</div>}
 
           {/* Icon Selection */}
           <div>
-            <label className="block text-xs font-bold uppercase text-muted tracking-wide mb-3">Song Icon</label>
+            <span className="modal-label">Song Icon</span>
             <div 
-              className="w-32 aspect-square mx-auto rounded-2xl border-2 border-dashed border-border/50 hover:border-accent/50 cursor-pointer flex flex-col items-center justify-center transition-colors overflow-hidden relative"
+              className="modal-icon-preview"
               onClick={() => setShowIconPicker(true)}
             >
               {iconName ? (
                 <div 
-                  className="w-full h-full flex flex-col items-center justify-center"
+                  className="modal-icon-preview-filled"
                   style={{ backgroundColor: getColorById(iconColor).bg }}
                 >
                   {(() => {
                     const Icon = getIconById(iconName)?.component;
-                    return Icon ? <Icon size={40} style={{ color: getColorById(iconColor).fg }} /> : null;
+                    return Icon ? <Icon size={36} style={{ color: getColorById(iconColor).fg }} /> : null;
                   })()}
                   <button 
                     onClick={(e) => { e.stopPropagation(); setIconName(''); }} 
-                    className="absolute top-2 right-2 bg-black/20 hover:bg-black/40 text-black/50 hover:text-black rounded-full p-1 transition-colors"
+                    className="modal-icon-remove"
                   >
-                    <X size={14} />
+                    <X size={12} />
                   </button>
                 </div>
               ) : (
-                <div className="text-muted flex flex-col items-center gap-2">
-                  <Smile size={24} />
-                  <span className="text-sm font-medium text-center px-2">Choose Icon</span>
+                <div className="modal-icon-placeholder">
+                  <Smile size={22} />
+                  <span>Choose Icon</span>
                 </div>
               )}
             </div>
-            <p className="text-xs text-muted mt-2 text-center">Set your song's visual identity.</p>
+            <p className="modal-icon-hint">Set your song's visual identity.</p>
           </div>
 
-          <div className="space-y-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
-              <label className="block text-xs font-bold uppercase text-muted tracking-wide mb-2">Song Title</label>
+              <span className="modal-label">Song Title</span>
               <input 
                 type="text" 
                 value={title} 
                 onChange={e => setTitle(e.target.value)} 
-                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-primary placeholder:text-muted focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-200 outline-none"
+                className="modal-input"
                 placeholder="My Awesome Song"
               />
             </div>
             
             <div>
-              <label className="block text-xs font-bold uppercase text-muted tracking-wide mb-2">Genre</label>
+              <span className="modal-label">Genre</span>
               <select 
                 value={genre} 
                 onChange={e => setGenre(e.target.value)}
-                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-primary focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-200 outline-none appearance-none cursor-pointer"
+                className="modal-input"
+                style={{ appearance: 'none', cursor: 'pointer' }}
               >
                 {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
               </select>
@@ -116,12 +117,10 @@ export default function SongModal({ initialData, onClose, onSuccess }) {
           </div>
         </div>
 
-        <div className="p-6 border-t border-border/10 flex justify-end gap-3 bg-card/50">
-          <button onClick={onClose} className="px-6 py-2.5 rounded-full font-semibold text-muted hover:text-primary transition-colors">
-            Cancel
-          </button>
-          <button onClick={handleSave} disabled={loading} className="px-6 py-2.5 rounded-full font-semibold bg-accent text-white hover:opacity-90 shadow-lg shadow-accent/20 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100 flex items-center gap-2">
-            {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Check size={18} />}
+        <div className="modal-footer">
+          <button onClick={onClose} className="modal-cancel-btn">Cancel</button>
+          <button onClick={handleSave} disabled={loading} className="modal-save-btn">
+            {loading ? <div className="modal-spinner" /> : <Check size={16} />}
             Save Changes
           </button>
         </div>

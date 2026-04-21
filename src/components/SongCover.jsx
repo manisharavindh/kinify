@@ -7,7 +7,7 @@ const SongCover = memo(function SongCover({ song, className = '', size = 'md' })
   const sizeMap = { sm: 18, md: 28, lg: 40, xl: 56 };
   const iconSize = sizeMap[size] || 28;
 
-  // 2. If there's an icon_name set, render that icon with its color
+  // If there's an icon_name set, render that icon with its color
   if (song?.icon_name) {
     const iconDef = getIconById(song.icon_name);
     const colorDef = getColorById(song.icon_color || 'pink');
@@ -15,7 +15,7 @@ const SongCover = memo(function SongCover({ song, className = '', size = 'md' })
 
     return (
       <div
-        className={`flex items-center justify-center ${className}`}
+        className={`song-cover ${className}`}
         style={{ backgroundColor: colorDef.bg }}
       >
         <IconComp size={iconSize} style={{ color: colorDef.fg }} strokeWidth={2} />
@@ -23,15 +23,15 @@ const SongCover = memo(function SongCover({ song, className = '', size = 'md' })
     );
   }
 
-  // 3. Fallback: genre gradient with generic music icon
+  // Fallback: genre gradient with generic music icon
   const gradient = getGenreGradient(song?.genre || 'Other');
 
   return (
     <div
-      className={`flex items-center justify-center ${className}`}
+      className={`song-cover ${className}`}
       style={{ background: gradient }}
     >
-      <Music size={iconSize} className="text-white/60" />
+      <Music size={iconSize} className="song-cover-icon" />
     </div>
   );
 });

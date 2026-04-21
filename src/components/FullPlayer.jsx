@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import {
   Play, Pause, SkipBack, SkipForward, Heart,
   ChevronDown, Volume2, VolumeX, Volume1,
-  Repeat, Shuffle, ListMusic
+  Repeat, Shuffle, Share2
 } from 'lucide-react';
 import SongCover from './SongCover';
 import Visualizer from './Visualizer';
@@ -22,6 +22,15 @@ const FullPlayer = memo(function FullPlayer() {
   const pct = duration ? (progress / duration) * 100 : 0;
   const isLiked = likes.has(currentTrack.id);
   const VolumeIcon = isMuted || volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
+  
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/`);
+      alert('Link to Kinify copied to clipboard!');
+    } catch (err) {
+      console.error('Failed to copy', err);
+    }
+  };
 
   return (
     <div className="full-player">
@@ -37,22 +46,20 @@ const FullPlayer = memo(function FullPlayer() {
         {/* Header */}
         <div className="full-player-header">
           <button onClick={() => setShowFullPlayer(false)} className="fp-btn" aria-label="Close">
-            <ChevronDown size={28} />
+            <ChevronDown size={26} />
           </button>
           <div className="fp-now-playing">
-            {/* <span className="fp-label">NOW PLAYING</span> */}
             <span className="fp-album">{currentTrack.album?.title || currentTrack.genre || ''}</span>
           </div>
-          {/* <div className="fp-queue-badge">
-            <ListMusic size={18} />
-            <span>{currentIndex + 1}/{queue.length}</span>
-          </div> */}
+          <button onClick={handleShare} className="fp-btn" aria-label="Share">
+            <Share2 size={22} />
+          </button>
         </div>
 
         {/* Cover Art */}
-        <div className="full-player-art relative">
-          <SongCover song={currentTrack} className="fp-cover z-10" size="xl" />
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none mix-blend-overlay opacity-30 z-20">
+        <div className="full-player-art">
+          <SongCover song={currentTrack} className="fp-cover" size="xl" />
+          <div className="fp-cover-visualizer">
             <Visualizer width={200} height={80} barWidth={8} gap={4} color="#ffffff" />
           </div>
         </div>
@@ -70,7 +77,7 @@ const FullPlayer = memo(function FullPlayer() {
               className={`fp-btn ${isLiked ? 'text-accent' : ''}`}
               aria-label={isLiked ? 'Unlike' : 'Like'}
             >
-              <Heart size={24} className={isLiked ? 'fill-current' : ''} />
+              <Heart size={22} className={isLiked ? 'fill-current' : ''} />
             </button>
           </div>
 
@@ -92,28 +99,28 @@ const FullPlayer = memo(function FullPlayer() {
           {/* Main Controls */}
           <div className="fp-main-controls">
             <button onClick={() => setIsShuffle(p => !p)} className={`fp-btn-sm ${isShuffle ? 'text-accent' : ''}`} aria-label="Shuffle">
-              <Shuffle size={20} />
+              <Shuffle size={18} />
             </button>
             <div className="fp-transport">
               <button onClick={skipBackward} className="fp-btn-transport" aria-label="Previous">
-                <SkipBack size={24} className="fill-current" />
+                <SkipBack size={22} className="fill-current" />
               </button>
               <button onClick={togglePlay} className="fp-btn-play" aria-label={isPlaying ? 'Pause' : 'Play'}>
-                {isPlaying ? <Pause size={30} className="fill-current" /> : <Play size={30} className="fill-current ml-1" />}
+                {isPlaying ? <Pause size={26} className="fill-current" /> : <Play size={26} className="fill-current ml-1" />}
               </button>
               <button onClick={skipForward} className="fp-btn-transport" aria-label="Next">
-                <SkipForward size={24} className="fill-current" />
+                <SkipForward size={22} className="fill-current" />
               </button>
             </div>
             <button onClick={() => setIsRepeat(p => !p)} className={`fp-btn-sm ${isRepeat ? 'text-accent' : ''}`} aria-label="Repeat">
-              <Repeat size={20} />
+              <Repeat size={18} />
             </button>
           </div>
 
           {/* Volume */}
           <div className="fp-volume">
             <button onClick={() => setIsMuted(p => !p)} className="fp-btn-sm">
-              <VolumeIcon size={18} />
+              <VolumeIcon size={16} />
             </button>
             <input
               type="range" min="0" max="1" step="0.01"
